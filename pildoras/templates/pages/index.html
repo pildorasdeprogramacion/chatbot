@@ -1,0 +1,75 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+{% block title %} Dashboard {% endblock title %}
+
+{% block content %}
+    <div class="container">
+        <div class="chatbox">
+            <div class="chatbox__support">
+                <div class="chatbox__header">
+                    <div class="chatbox__image--header">
+                        <img src="{% static 'images/image.png' %}" alt="Image">
+                    </div>
+                    <div class="chatbox__content--header">
+                        <h4 class="chatbox__heading--header">Chat support</h4>
+                        <p class="chatbox__description--header">I'm here to assist you!</p>
+                    </div>
+                </div>
+
+                <div class="chatbox__messages" id="chatbox-messages">
+                    <!-- Messages will be appended here dynamically -->
+                </div>
+
+                <div class="chatbox__footer">
+                    <input type="text" id="chat-input" placeholder="Write a message..." />
+                    <button class="chatbox__send--footer" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+
+            <div class="chatbox__button">
+                <button onclick="toggleChat()">Chat</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleChat() {
+            const chatbox = document.querySelector('.chatbox__support');
+            chatbox.classList.toggle('chatbox--active');
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (message === '') return;
+
+            appendMessage('visitor', message);
+            input.value = '';
+
+            // Enviar mensaje al backend Django
+            const response = await fetch('/api/mensaje/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ contenido: message, usuario: 1 })  // Ajusta el ID del usuario según corresponda
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                appendMessage('operator', data.respuesta);  // Usar la respuesta del chatbot
+            } else {
+                appendMessage('operator', 'Error: No se pudo enviar el mensaje.');
+            }
+        }
+
+        function appendMessage(sender, text) {
+            const chatboxMessages = document.getElementById('chatbox-messages');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('messages__item', `messages__item--${sender}`);
+            messageElement.textContent = text;
+            chatboxMessages.appendChild(messageElement);
+            chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
+        }
+    </script>
+{% endblock content %}
